@@ -6,9 +6,6 @@ using System.Runtime.Serialization.Formatters.Binary;
 using System.IO;
 using System.Threading;
 using System.Linq;
-using SimpleFileBrowser;
-using GoogleMobileAds.Common;
-using GoogleMobileAds.Api;
 
 
 public class PlayerController : MonoBehaviour
@@ -48,9 +45,6 @@ public class PlayerController : MonoBehaviour
     public GameObject tapFX;
     public Texture2D questionMark;
     public GameObject button_selectFlag;
-
-    public RewardedAd rewardedAd;
-    public InterstitialAd videoAd;
     private System.DateTime lastAdTime = System.DateTime.Now.AddMinutes(-10);
 
     public List<MagicCard> magicCards = new List<MagicCard>();
@@ -113,8 +107,6 @@ public class PlayerController : MonoBehaviour
     {
         yield return new WaitForSeconds(0);
 
-        rewardedAd = CreateRewardedAd();
-        videoAd = CreateVideoAd();
     }
 
     public bool IsPointerOverUI()
@@ -535,13 +527,6 @@ public class PlayerController : MonoBehaviour
         return valid;
     }
 
-    public void BrowseFiles()
-    {
-        FileBrowser.OnSuccess onSuccess = LoadFile;
-        FileBrowser.SetFilters(false, new string[] { ".png", ".jpg", ".bmp" });
-        FileBrowser.ShowLoadDialog(onSuccess, LoadFileCanceled, FileBrowser.PickMode.Files, false);
-    }
-
     public void LoadFile(string[] paths)
     {
         if (paths.Length > 0)
@@ -622,21 +607,6 @@ public class PlayerController : MonoBehaviour
         leaderboard.SetActive(true);
     }
 
-    public void ShowRewardedAds()
-    {
-        if (GetComponent<NetworkController>().connected)
-        {
-            if (this.rewardedAd.IsLoaded())
-            {
-                this.rewardedAd.Show();
-            }
-        }
-        else
-        {
-            GetComponent<NetworkController>().connectionError = true;
-        }
-    }
-
     public bool ShowVideoAd()
     {
         bool show = (System.DateTime.Now > lastAdTime.AddMinutes(10)) && GetComponent<NetworkController>().connected;
@@ -644,60 +614,9 @@ public class PlayerController : MonoBehaviour
         if (show)
         {
             lastAdTime = System.DateTime.Now;
-            videoAd.Show();
         }
 
         return show;
-    }
-
-    public RewardedAd CreateRewardedAd()
-    {
-        string adUnitId;
-
-        #if UNITY_ANDROID
-            adUnitId = "ca-app-pub-5042501351321565/3616185880";
-        #elif UNITY_IPHONE
-            adUnitId = "ca-app-pub-5042501351321565/4603153863";
-        #else
-            adUnitId = "unexpected_platform";
-        #endif
-
-        RewardedAd ad = new RewardedAd(adUnitId);
-        ad.OnUserEarnedReward += HandleUserEarnedReward;
-        ad.OnAdClosed += HandleRewardedAdClosed;
-        AdRequest request = new AdRequest.Builder().Build();
-        ad.LoadAd(request);
-
-        return ad;
-    }
-
-    private InterstitialAd CreateVideoAd()
-    {
-        #if UNITY_ANDROID
-            string adUnitId = "ca-app-pub-5042501351321565/1354459409";
-        #elif UNITY_IPHONE
-            string adUnitId = "ca-app-pub-5042501351321565/6091780764";
-        #else
-            string adUnitId = "unexpected_platform";
-        #endif
-
-        InterstitialAd ad = new InterstitialAd(adUnitId);
-        AdRequest request = new AdRequest.Builder().Build();
-        ad.LoadAd(request);
-
-        return ad;
-    }
-
-    public void HandleUserEarnedReward(object sender, Reward args)
-    {
-        User.coins += 25;
-        GetComponent<AudioSource>().PlayOneShot(GetComponent<GameState>().sound_coins);
-        GetComponent<NetworkController>().SaveUserData();
-    }
-
-    public void HandleRewardedAdClosed(object sender, System.EventArgs args)
-    {
-        rewardedAd = CreateRewardedAd();
     }
 
     public void UIRefreshMyAssets()
@@ -750,7 +669,7 @@ public class PlayerController : MonoBehaviour
     {
         if (card.id == "Raise Own Flag")
         {
-            BrowseFiles();
+            //BrowseFiles();
         }
         else if (card.id == "Remove Ads")
         {
